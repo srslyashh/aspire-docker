@@ -1,0 +1,6 @@
+@font-face {
+    font-family: "Stratum2WebBold";
+    src: url("/assets/fonts/Stratum2WebBold.woff2") format("woff2"),
+      url("/assets/fonts/Stratum2WebBold.woff") format("woff");
+    font-display: swap;
+  }
