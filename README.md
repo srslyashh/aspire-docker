@@ -5,7 +5,7 @@
 - example of docker with heroku: https://github.com/virtualstaticvoid/heroku-docker-r-shiny-app
 - rgdal package example with docker: https://github.com/virtualstaticvoid/heroku-docker-r-rgdal-example
    - issues i had : 
-      - could not use Aptfile for some reason (i tried to use the buildpack heroku-community/apt on heroku)
+      - could not use Aptfile for some reason (i tried to use the buildpack `heroku-community/apt` on heroku)
       - docker gave these errors: "No sandbox user '_apt' on the system, can not drop privileges.
 
 ### Files and what they contain
