@@ -15,6 +15,7 @@ library(fresh) # fresh is used to create a custom bootstrap application with cus
 
 source('webpages.r')
 
+# making the route for webpages 
 router <- make_router(
   route("/", home_page),
   route("censusdata", censusdata),
@@ -1437,6 +1438,189 @@ server <- function(input, output, session)
     shinyjs::toggle(id="dropdownmenu")
   })
   
+  #================================================================
+  # Maps for each of the variables
+  #================================================================
+  output$poverty = renderLeaflet({
+    povertydata = switch(input$age, 
+                         "Under 5 years" = all_census$Tot_pov_U_5_18, 
+                         "5 to 17 years" = all_census$Tot_pov_U_5_17_18,
+                         "Under 18 years" = all_census$Tot_pov_U_18,
+                         "Related children of householder under 18 years" = all_census$Tot_pov_RUC_18)
+    
+    legendTitle = switch(input$age, 
+                         "Under 5 years" =  poverty_legendT[1], 
+                         "5 to 17 years" = poverty_legendT[2],
+                         "Under 18 years" = poverty_legendT[3],
+                         "Related children of householder under 18 years" = poverty_legendT[4])
+    
+    # divides the color palette into 9 colors.
+    pal = colorBin(palette="OrRd", bins = 5, domain= povertydata,  pretty = TRUE)
+    
+    # the labels on top of the map when hovered over
+    labels = sprintf("<strong>%s<strong><br/>Total population: %g",
+                     all_census$Geographic_Area_Name, povertydata) %>%
+      lapply(htmltools::HTML)
+    
+    all_census %>% 
+      st_transform("EPSG:4326") %>%
+      leaflet() %>%
+      addProviderTiles(provider="CartoDB.Positron") %>%
+      addPolygons(label = labels, 
+                  stroke = TRUE, 
+                  color= "#d6d5de",
+                  weight= 1,
+                  smoothFactor = .5, 
+                  opacity = 0.5,
+                  fillOpacity = 0.7,
+                  fillColor = ~pal(povertydata),
+                  layerId = all_census$GEOID,
+                  highlightOptions = highlightOptions(weight=2,
+                                                      fillOpacity=1, 
+                                                      color="black",
+                                                      opacity=0.5,
+                                                      bringToFront= TRUE)) %>%
+      addLegend("bottomright", 
+                pal=pal,
+                values = ~povertydata,
+                title = legendTitle,
+                opacity = 0.7)
+  })
+  output$healthcoverage = renderLeaflet({
+    hcdata = switch(input$hc_age, 
+                    "Male under 6 years with health insurance coverage" = all_census$M_U_6__W_HIC, 
+                    "Male under 6 years without health insurance coverage"= all_census$M_U_6__N_HIC,
+                    "Male under 6 to 18 years with health insurance coverage" = all_census$M_16_18__W_HIC,
+                    "Male under 6 to 18 years without health insurance coverage"= all_census$M_16_18__N_HIC)
+    
+    legendTitle = switch(input$hc_age, 
+                         "Male under 6 years with health insurance coverage" = healthC_legendT[1], 
+                         "Male under 6 years without health insurance coverage"= healthC_legendT[2],
+                         "Male under 6 to 18 years with health insurance coverage"= healthC_legendT[3],
+                         "Male under 6 to 18 years without health insurance coverage"= healthC_legendT[4])
+    
+    pal = colorBin(palette="OrRd", 9, domain= hcdata)
+    
+    labels = sprintf("<strong>%s<strong><br/>Total population: %g",
+                     all_census$Geographic_Area_Name, hcdata) %>%
+      lapply(htmltools::HTML)
+    
+    all_census %>% 
+      st_transform("EPSG:4326") %>%
+      leaflet() %>%
+      addProviderTiles(provider="CartoDB.Positron") %>%
+      addPolygons(label = labels, 
+                  stroke = TRUE, 
+                  color= "#d6d5de",
+                  weight= 1,
+                  smoothFactor = .5, 
+                  opacity = 0.5,
+                  fillOpacity = 0.7,
+                  fillColor = ~pal(hcdata),
+                  layerId = all_census$GEOID,
+                  highlightOptions = highlightOptions(weight=2,
+                                                      fillOpacity=1, 
+                                                      color="black",
+                                                      opacity=0.5,
+                                                      bringToFront= TRUE)) %>%
+      addLegend("bottomright", 
+                pal=pal,
+                values = ~hcdata,
+                title = legendTitle,
+                opacity = 0.7)
+  })
+  output$householdage = renderLeaflet({
+    hhdata = switch(input$hh_age, 
+                    "Children in households under 3 years old" = all_census$Tot_hld_U_3, 
+                    "Children in households that are 3 to 4 years old" = all_census$Tot_hld_3_4,
+                    "Children in households that are 5 years old" = all_census$Tot_hld_5.x,
+                    "Children in households that are 6 to 8 years old"= all_census$Tot_hld_6_8, 
+                    "Children in households that are 9 to 11 years old"= all_census$Tot_hld_9_11,
+                    "Children in households that are 12 to 14 years old"= all_census$Tot_hld_12_14,
+                    "Children in households that are 15 to 17 years old"= all_census$Tot_hld_15_17)
+    
+    legendTitle = switch(input$hh_age, 
+                         "Children in households under 3 years old" = household_legendT[1], 
+                         "Children in households that are 3 to 4 years old"= household_legendT[2],
+                         "Children in households that are 5 years old" = household_legendT[3],
+                         "Children in households that are 6 to 8 years old"= household_legendT[4], 
+                         "Children in households that are 9 to 11 years old" = household_legendT[5],
+                         "Children in households that are 12 to 14 years old" = household_legendT[6],
+                         "Children in households that are 15 to 17 years old" = household_legendT[7])
+    
+    pal = colorBin(palette="OrRd", 6, domain= hhdata)
+    
+    labels = sprintf("<strong>%s<strong><br/>Total population: %g",
+                     all_census$Geographic_Area_Name, hhdata) %>%
+      lapply(htmltools::HTML)
+    
+    all_census %>% 
+      st_transform("EPSG:4326") %>%
+      leaflet() %>%
+      addProviderTiles(provider="CartoDB.Positron") %>%
+      addPolygons(label = labels, 
+                  stroke = TRUE, 
+                  color= "#d6d5de",
+                  weight= 1,
+                  smoothFactor = .5, 
+                  opacity = 0.5,
+                  fillOpacity = 0.7,
+                  fillColor = ~pal(hhdata),
+                  layerId = all_census$GEOID,
+                  highlightOptions = highlightOptions(weight=2,
+                                                      fillOpacity=1, 
+                                                      color="black",
+                                                      opacity=0.5,
+                                                      bringToFront= TRUE)) %>%
+      addLegend("bottomright", 
+                pal=pal,
+                values = ~hhdata,
+                title = legendTitle,
+                opacity = 0.7)
+  })
+  output$resources = renderLeaflet({
+    rdata = switch(input$resource_type, 
+                   "Water"= all_census$ALAND.x,
+                   "Land" = all_census$AWATER.x)
+    
+    legendTitle = switch(input$resource_type, 
+                         "Water"= resource_legendT[1],
+                         "Land" = resource_legendT[2])
+    
+    pal = colorBin(palette="OrRd", 6, domain= rdata)
+    
+    labels = sprintf("<strong>%s<strong><br/>Total: %.13g",
+                     all_census$Geographic_Area_Name, rdata) %>%
+      lapply(htmltools::HTML)
+    
+    all_census %>% 
+      st_transform("EPSG:4326") %>%
+      leaflet() %>%
+      addProviderTiles(provider="CartoDB.Positron") %>%
+      addPolygons(label = labels, 
+                  stroke = TRUE, 
+                  color= "#d6d5de",
+                  weight= 1,
+                  smoothFactor = .5, 
+                  opacity = 0.5,
+                  fillOpacity = 0.7,
+                  fillColor = ~pal(rdata),
+                  layerId = all_census$GEOID,
+                  highlightOptions = highlightOptions(weight=2,
+                                                      fillOpacity=1, 
+                                                      color="black",
+                                                      opacity=0.5,
+                                                      bringToFront= TRUE)) %>%
+      addLegend("bottomright", 
+                pal=pal,
+                values = ~rdata,
+                title = legendTitle,
+                opacity = 0.7)
+  })
+  
+  #================================================================
+  # Histogram for each of the variables
+  #================================================================
   output$povertyhist = renderPlotly({
     population = switch(input$age, 
                         "Under 5 years" = all_census$Tot_pov_U_5_18, 
@@ -1638,6 +1822,10 @@ server <- function(input, output, session)
                            bgcolor=("rgba(255, 255, 255, 0.75"))) 
   })
   
+  #================================================================
+  # Observes the clicking done on any of the map, 
+  # then changing the histogram based on the item that is clicked
+  #================================================================
   observeEvent(input$age,{
     click_ages <- reactiveValues( ids = vector() )
     observeEvent({input$poverty_shape_click},{
@@ -2085,6 +2273,7 @@ server <- function(input, output, session)
   
   #================================
   # if statement for the textOuput!
+  # > renders text for each of the text boxes on each page
   #================================
   
   #------------ poverty data --------------
@@ -2189,6 +2378,7 @@ server <- function(input, output, session)
   
   #------------ population in household by age --------------
   output$hhage_title = renderText({
+    out = ""
     if(input$hh_age == "Children in households under 3 years old")
     {
       out = paste("About under 3 years")
@@ -2216,6 +2406,7 @@ server <- function(input, output, session)
     out
   })
   output$hhage_variable = renderText({
+    out = ""
     if(input$hh_age == "Under 5 years")
     {
       out = paste("Explanation 1 - Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore 
@@ -2253,6 +2444,7 @@ server <- function(input, output, session)
   
   #------------ resources --------------
   output$resources_title = renderText({
+    out = ""
     if(input$resource_type == "Water")
     {
       out = paste("About Water")
@@ -2264,6 +2456,7 @@ server <- function(input, output, session)
     out
   })
   output$resources_variable = renderText({
+    out = ""
     if(input$resource_type == "Water")
     {
       out = paste("About Water - Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore 
